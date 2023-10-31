@@ -9,7 +9,6 @@ manage = Blueprint("manage", __name__)
 @manage.route("/levels", methods=["POST", "GET", "PATCH", "DELETE"])
 def level():
     if request.method == "POST":
-        # get data from request
         name = request.json.get("name")
         img_url = request.json.get("img_url")
 
@@ -43,6 +42,55 @@ def level():
         res = db.levels.update_one(
             {"_id": ObjectId(id)},
             {"$set": {"name": name, "img_url": img_url}},
+        )
+        if res.modified_count == 1:
+            return {"status": 200}
+        else:
+            return {"status": 404}
+
+
+@manage.route("/levels/<level_id>/tags", methods=["POST", "GET", "PUT", "DELETE"])
+def tags(level_id):
+    if request.method == "POST":
+        tag = request.json.get("tag")
+        # Add tag if tag.tag does not exist in tags array
+        # In example, if tag.tag is "tag1" and tags array is [{"tag": "tag1", "other": 1}, {"tag": "tag2"}]
+        # then tag will not be added
+        res = db.levels.update_one(
+            {"_id": ObjectId(level_id), "tags.tag": {"$ne": tag["tag"]}},
+            {"$push": {"tags": tag}},
+        )
+        if res.modified_count == 1:
+            return {"status": 200}
+        else:
+            return {"status": 403}
+    elif request.method == "GET":
+        res = db.levels.find_one({"_id": ObjectId(level_id)})
+        return {
+            "status": 200,
+            "data": dumps(res["tags"]),
+        }
+    elif request.method == "DELETE":
+        tag = request.json.get("tag")
+        # Delete tag if tag.tag exists in tags array
+        # In example, if tag.tag is "tag1" and tags array is [{"tag": "tag1", "other": 1}, {"tag": "tag2"}]
+        # then tag after deletion will be [{"tag": "tag2"}]
+        res = db.levels.update_one(
+            {"_id": ObjectId(level_id)},
+            {"$pull": {"tags": {"tag": {"$eq": tag["tag"]}}}},
+        )
+        if res.modified_count == 1:
+            return {"status": 200}
+        else:
+            return {"status": 404}
+    elif request.method == "PUT":
+        tag = request.json.get("tag")
+        # Update tag if tag.tag exists in tags array
+        # In example, if tag.tag is "tag1" and tag.tag other is 2 and tags array is [{"tag": "tag1", "other": 1}, {"tag": "tag2"}]
+        # then tag after update will be [{"tag": "tag1", "other": 2}, {"tag": "tag2"}]
+        res = db.levels.update_one(
+            {"_id": ObjectId(level_id), "tags.tag": {"$eq": tag["tag"]}},
+            {"$set": {"tags.$": tag}},
         )
         if res.modified_count == 1:
             return {"status": 200}
