@@ -19,21 +19,21 @@ def level():
                 "tags": [],
             }
         )
-        return {"status": 200}
+        return {"status": 200}, 200
     elif request.method == "GET":
         res = db.levels.find({})
         return {
             "status": 200,
             "data": dumps(list(res)),
-        }
+        }, 200
     elif request.method == "DELETE":
         id = request.json.get("id")
         # Delete level if it exists else return 404
         res = db.levels.delete_one({"_id": ObjectId(id)})
         if res.deleted_count == 1:
-            return {"status": 200}
+            return {"status": 200}, 200
         else:
-            return {"status": 404}
+            return {"status": 404}, 404
     elif request.method == "PUT":
         id = request.json.get("id")
         name = request.json.get("name")
@@ -44,9 +44,9 @@ def level():
             {"$set": {"name": name, "img_url": img_url}},
         )
         if res.modified_count == 1:
-            return {"status": 200}
+            return {"status": 200}, 200
         else:
-            return {"status": 404}
+            return {"status": 404}, 404
 
 
 @manage.route("/levels/<level_id>/tags", methods=["POST", "GET", "PUT", "DELETE"])
@@ -61,15 +61,15 @@ def tags(level_id):
             {"$push": {"tags": tag}},
         )
         if res.modified_count == 1:
-            return {"status": 200}
+            return {"status": 200}, 200
         else:
-            return {"status": 403}
+            return {"status": 403}, 403
     elif request.method == "GET":
         res = db.levels.find_one({"_id": ObjectId(level_id)})
         return {
             "status": 200,
             "data": dumps(res["tags"]),
-        }
+        }, 200
     elif request.method == "DELETE":
         tag = request.json.get("tag")
         # Delete tag if tag.tag exists in tags array
@@ -80,9 +80,9 @@ def tags(level_id):
             {"$pull": {"tags": {"tag": {"$eq": tag["tag"]}}}},
         )
         if res.modified_count == 1:
-            return {"status": 200}
+            return {"status": 200}, 200
         else:
-            return {"status": 404}
+            return {"status": 404}, 404
     elif request.method == "PUT":
         tag = request.json.get("tag")
         # Update tag if tag.tag exists in tags array
@@ -93,6 +93,6 @@ def tags(level_id):
             {"$set": {"tags.$": tag}},
         )
         if res.modified_count == 1:
-            return {"status": 200}
+            return {"status": 200}, 200
         else:
-            return {"status": 404}
+            return {"status": 404}, 404
