@@ -20,6 +20,7 @@ def level():
                 "$set": {
                     "name": name,
                     "img_url": img_url,
+                    "locations": [],
                 }
             },
             upsert=True,
