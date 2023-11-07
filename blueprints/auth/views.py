@@ -22,7 +22,7 @@ def login():
         # Generate token
         token = jwt.encode(
             {
-                "exp": datetime.now() + timedelta(seconds=10, hours=-7),
+                "exp": datetime.now() + timedelta(minutes=60, hours=-7),
                 "id": str(res.get("_id")),
                 "username": res.get("username"),
             },

@@ -16,7 +16,7 @@ def level():
             {
                 "name": name,
                 "img_url": img_url,
-                "tags": [],
+                "locations": [],
             }
         )
         return {"status": 200}, 200
@@ -49,16 +49,16 @@ def level():
             return {"status": 404}, 404
 
 
-@manage.route("/levels/<level_id>/tags", methods=["POST", "GET", "PUT", "DELETE"])
-def tags(level_id):
+@manage.route("/levels/<level_id>/locations", methods=["POST", "GET", "PUT", "DELETE"])
+def locations(level_id):
     if request.method == "POST":
-        tag = request.json.get("tag")
-        # Add tag if tag.tag does not exist in tags array
-        # In example, if tag.tag is "tag1" and tags array is [{"tag": "tag1", "other": 1}, {"tag": "tag2"}]
-        # then tag will not be added
+        location = request.json.get("location")
+        # Add location if location.name does not exist in locations array
+        # In example, if location.name is "tag1" and locations array is [{"name": "tag1", "other": 1}, {"name": "tag2"}]
+        # then location will not be added
         res = db.levels.update_one(
-            {"_id": ObjectId(level_id), "tags.tag": {"$ne": tag["tag"]}},
-            {"$push": {"tags": tag}},
+            {"_id": ObjectId(level_id), "locations.name": {"$ne": location["name"]}},
+            {"$push": {"locations": location}},
         )
         if res.modified_count == 1:
             return {"status": 200}, 200
@@ -68,31 +68,31 @@ def tags(level_id):
         res = db.levels.find_one({"_id": ObjectId(level_id)})
         return {
             "status": 200,
-            "data": dumps(res["tags"]),
+            "data": dumps(res["locations"]),
         }, 200
     elif request.method == "DELETE":
-        tag = request.json.get("tag")
-        # Delete tag if tag.tag exists in tags array
-        # In example, if tag.tag is "tag1" and tags array is [{"tag": "tag1", "other": 1}, {"tag": "tag2"}]
-        # then tag after deletion will be [{"tag": "tag2"}]
+        location = request.json.get("location")
+        # Delete location if location.name exists in locations array
+        # In example, if location.name is "tag1" and locations array is [{"name": "tag1", "other": 1}, {"name": "tag2"}]
+        # then locations after deletion will be [{"name": "tag2"}]
         res = db.levels.update_one(
             {"_id": ObjectId(level_id)},
-            {"$pull": {"tags": {"tag": {"$eq": tag["tag"]}}}},
+            {"$pull": {"locations": {"name": {"$eq": location["name"]}}}},
         )
         if res.modified_count == 1:
             return {"status": 200}, 200
         else:
             return {"status": 404}, 404
     elif request.method == "PUT":
-        tag = request.json.get("tag")
-        # Update tag if tag.tag exists in tags array
-        # In example, if tag.tag is "tag1" and tag.tag other is 2 and tags array is [{"tag": "tag1", "other": 1}, {"tag": "tag2"}]
-        # then tag after update will be [{"tag": "tag1", "other": 2}, {"tag": "tag2"}]
+        location = request.json.get("location")
+        # Update location if location.name exists in locations array
+        # In example, if location.name is "tag1" and location.name other is 2 and locations array is [{"name": "tag1", "other": 1}, {"name": "tag2"}]
+        # then locations after update will be [{"name": "tag1", "other": 2}, {"name": "tag2"}]
         res = db.levels.update_one(
-            {"_id": ObjectId(level_id), "tags.tag": {"$eq": tag["tag"]}},
-            {"$set": {"tags.$": tag}},
+            {"_id": ObjectId(level_id), "locations.name": {"$eq": location["name"]}},
+            {"$set": {"locations.$": location}},
         )
-        if res.modified_count == 1:
+        if res.matched_count == 1:
             return {"status": 200}, 200
         else:
             return {"status": 404}, 404
