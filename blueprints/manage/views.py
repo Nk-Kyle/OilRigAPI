@@ -9,17 +9,26 @@ manage = Blueprint("manage", __name__)
 @manage.route("/levels", methods=["POST", "GET", "PATCH", "DELETE"])
 def level():
     if request.method == "POST":
-        name = request.json.get("name")
-        img_url = request.json.get("img_url")
+        name = request.json.get("name", "")
+        img_url = request.json.get("img_url", "")
 
-        res = db.levels.insert_one(
+        res = db.levels.update_one(
             {
                 "name": name,
-                "img_url": img_url,
-                "locations": [],
-            }
+            },
+            {
+                "$set": {
+                    "name": name,
+                    "img_url": img_url,
+                }
+            },
+            upsert=True,
         )
-        return {"status": 200}, 200
+        if res.upserted_id:
+            return {"status": 201}, 201
+
+        return {"status": 409}, 409
+
     elif request.method == "GET":
         res = db.levels.find({})
         return {
@@ -27,7 +36,7 @@ def level():
             "data": dumps(list(res)),
         }, 200
     elif request.method == "DELETE":
-        id = request.json.get("id")
+        id = request.json.get("id", "")
         # Delete level if it exists else return 404
         res = db.levels.delete_one({"_id": ObjectId(id)})
         if res.deleted_count == 1:
@@ -35,9 +44,9 @@ def level():
         else:
             return {"status": 404}, 404
     elif request.method == "PUT":
-        id = request.json.get("id")
-        name = request.json.get("name")
-        img_url = request.json.get("img_url")
+        id = request.json.get("id", "")
+        name = request.json.get("name", "")
+        img_url = request.json.get("img_url", "")
         # Update level if it exists else return 404
         res = db.levels.update_one(
             {"_id": ObjectId(id)},
@@ -61,9 +70,9 @@ def locations(level_id):
             {"$push": {"locations": location}},
         )
         if res.modified_count == 1:
-            return {"status": 200}, 200
+            return {"status": 201}, 201
         else:
-            return {"status": 403}, 403
+            return {"status": 409}, 409
     elif request.method == "GET":
         res = db.levels.find_one({"_id": ObjectId(level_id)})
         return {
