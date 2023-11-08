@@ -2,39 +2,39 @@ from flask import Blueprint, request
 from bson.json_util import dumps
 from bson.objectid import ObjectId
 from db.database import db
+from pymongo import errors
 
 manage = Blueprint("manage", __name__)
 
 
-@manage.route("/levels", methods=["POST", "GET", "PATCH", "DELETE"])
+@manage.route("/levels", methods=["POST", "GET", "PUT", "DELETE"])
 def level():
     if request.method == "POST":
         name = request.json.get("name", "")
         img_url = request.json.get("img_url", "")
+        try:
+            res = db.levels.insert_one(
+                {"name": name, "img_url": img_url, "locations": []}
+            )
+        except errors.DuplicateKeyError:
+            return {
+                "status": 409,
+                "message": "A level with this name already exists.",
+            }, 409
 
-        res = db.levels.update_one(
-            {
-                "name": name,
-            },
-            {
-                "$set": {
-                    "name": name,
-                    "img_url": img_url,
-                    "locations": [],
-                }
-            },
-            upsert=True,
-        )
-        if res.upserted_id:
-            return {"status": 201}, 201
-
-        return {"status": 409}, 409
+        return {"status": 201}, 201
 
     elif request.method == "GET":
-        res = db.levels.find({})
+        res = db.levels.find({}).sort([("name", 1)])
+        data = list(res)
+
+        for level in data:
+            level["id"] = str(level["_id"])
+            del level["_id"]
+
         return {
             "status": 200,
-            "data": dumps(list(res)),
+            "data": data,
         }, 200
     elif request.method == "DELETE":
         id = request.json.get("id", "")
@@ -78,7 +78,7 @@ def locations(level_id):
         res = db.levels.find_one({"_id": ObjectId(level_id)})
         return {
             "status": 200,
-            "data": dumps(res["locations"]),
+            "data": res["locations"],
         }, 200
     elif request.method == "DELETE":
         location = request.json.get("location")
