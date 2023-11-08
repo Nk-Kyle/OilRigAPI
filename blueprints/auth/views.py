@@ -4,8 +4,14 @@ from bson.objectid import ObjectId
 from db.database import db
 from hashlib import sha256
 from datetime import datetime, timedelta
+import dotenv
+import os
 
 import jwt
+
+dotenv.load_dotenv(".env")
+
+is_prod = os.getenv("IS_PROD", "true") == "true"
 
 auth = Blueprint("auth", __name__)
 
@@ -22,7 +28,9 @@ def login():
         # Generate token
         token = jwt.encode(
             {
-                "exp": datetime.now() + timedelta(minutes=60, hours=-7),
+                "exp": datetime.now() + timedelta(minutes=120, hours=-7)
+                if not is_prod
+                else datetime.now() + timedelta(minutes=60),
                 "id": str(res.get("_id")),
                 "username": res.get("username"),
             },
