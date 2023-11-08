@@ -1,7 +1,10 @@
 from pymongo import MongoClient
 import dotenv
+import os
 
-password = dotenv.get_key(dotenv.find_dotenv(), "MONGO_PASSWORD")
+dotenv.load_dotenv(".env")
+
+password = os.getenv("MONGO_PASSWORD")
 
 
 class Database:
