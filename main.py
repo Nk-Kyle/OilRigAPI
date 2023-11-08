@@ -10,5 +10,12 @@ app.config["SECRET_KEY"] = "secret"
 app.register_blueprint(manage, url_prefix="/manage")
 app.register_blueprint(auth, url_prefix="/auth")
 
+
+# Hello World
+@app.route("/")
+def hello_world():
+    return "Hello, World!"
+
+
 if __name__ == "__main__":
     app.run(debug=True)
