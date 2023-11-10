@@ -3,6 +3,7 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 from db.database import db
 from pymongo import errors
+import uuid
 
 manage = Blueprint("manage", __name__)
 
@@ -63,9 +64,10 @@ def level():
 def locations(level_id):
     if request.method == "POST":
         location = request.json.get("location")
-        # Add location if location.name does not exist in locations array
+        # Add location if location.name and location.id does not exist in locations array
         # In example, if location.name is "tag1" and locations array is [{"name": "tag1", "other": 1}, {"name": "tag2"}]
         # then location will not be added
+        location["id"] = str(uuid.uuid4()).replace("-", "")
         res = db.levels.update_one(
             {"_id": ObjectId(level_id), "locations.name": {"$ne": location["name"]}},
             {"$push": {"locations": location}},
@@ -87,7 +89,7 @@ def locations(level_id):
         # then locations after deletion will be [{"name": "tag2"}]
         res = db.levels.update_one(
             {"_id": ObjectId(level_id)},
-            {"$pull": {"locations": {"name": {"$eq": location["name"]}}}},
+            {"$pull": {"locations": {"id": {"$eq": location["id"]}}}},
         )
         if res.modified_count == 1:
             return {"status": 200}, 200
@@ -95,11 +97,20 @@ def locations(level_id):
             return {"status": 404}, 404
     elif request.method == "PUT":
         location = request.json.get("location")
-        # Update location if location.name exists in locations array
-        # In example, if location.name is "tag1" and location.name other is 2 and locations array is [{"name": "tag1", "other": 1}, {"name": "tag2"}]
-        # then locations after update will be [{"name": "tag1", "other": 2}, {"name": "tag2"}]
+        # Update location if location.id exists in locations array
+        # In example, if location.id is "1" and location.other is 2 and locations array is [{"id" : "1", "name": "tag1", "other": 1}, {"id" : "2","name": "tag2"}]
+        # then locations after update will be [{"id" : "1", "name": "tag1", "other": 2}, {"id" : "2","name": "tag2"}]
+
+        # Check if location.name already exists in locations array
+
+        res = db.levels.find_one(
+            {"_id": ObjectId(level_id), "locations.name": {"$eq": location["name"]}}
+        )
+        if res is not None:
+            return {"status": 409}, 409
+
         res = db.levels.update_one(
-            {"_id": ObjectId(level_id), "locations.name": {"$eq": location["name"]}},
+            {"_id": ObjectId(level_id), "locations.id": {"$eq": location["id"]}},
             {"$set": {"locations.$": location}},
         )
         if res.matched_count == 1:
