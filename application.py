@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from blueprints.manage.views import manage
 from blueprints.auth.views import auth
+from blueprints.assignment.views import assignment
 
 
 def create_app():
@@ -11,6 +12,7 @@ def create_app():
     app.config["SECRET_KEY"] = "secret"
     app.register_blueprint(manage, url_prefix="/manage")
     app.register_blueprint(auth, url_prefix="/auth")
+    app.register_blueprint(assignment, url_prefix="/assignments")
 
     @app.route("/")
     def index():
