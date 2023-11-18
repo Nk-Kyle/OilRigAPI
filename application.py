@@ -4,6 +4,7 @@ from blueprints.manage.views import manage
 from blueprints.auth.views import auth
 from blueprints.assignment.views import assignment
 from blueprints.employee.views import employee
+from blueprints.analytic.views import analytic
 
 
 def create_app():
@@ -15,6 +16,7 @@ def create_app():
     app.register_blueprint(auth, url_prefix="/auth")
     app.register_blueprint(assignment, url_prefix="/assignments")
     app.register_blueprint(employee, url_prefix="/employees")
+    app.register_blueprint(analytic, url_prefix="/analytics")
 
     @app.route("/")
     def index():
