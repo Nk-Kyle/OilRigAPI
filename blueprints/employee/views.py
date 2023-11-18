@@ -100,7 +100,7 @@ def employee_assign():
                 {
                     "$set": {
                         "is_logged_in": True,
-                        "assigned_tasks": tasks,
+                        "assigned_tasks": [task["_id"] for task in tasks],
                         "logs": [
                             {
                                 "id": str(uuid.uuid4()),
@@ -111,7 +111,6 @@ def employee_assign():
                     }
                 },
             )
-            print(tasks)
 
             # Update assignments which are assigned to the user to IN PROGRESS
             db.assignments.update_many(
@@ -135,9 +134,11 @@ def employee_assign():
                 },
             )
 
-            res["id"] = str(res["_id"])
-            del res["_id"]
-            return {"status": 200, "data": res}, 200
+            for task in tasks:
+                task["id"] = str(task["_id"])
+                del task["_id"]
+
+            return {"status": 200, "data": tasks}, 200
         else:
             return {"status": 404, "message": "User not found."}, 404
 
