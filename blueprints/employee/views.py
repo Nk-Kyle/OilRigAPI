@@ -66,6 +66,7 @@ def employee_info():
                 "division": res["division"],
                 "work_type": res["work_type"],
                 "photo_url": res["photo_url"],
+                "is_logged_in": res["is_logged_in"],
             }
             return {"status": 200, "data": res}, 200
         else:
