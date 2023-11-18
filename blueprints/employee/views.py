@@ -74,7 +74,7 @@ def employee_info():
 
 
 @employee.route("/login", methods=["POST"])
-def employee_assign():
+def employee_login():
     if request.method == "POST":
         id = request.json.get("id", "")
         password = request.json.get("password", "")
@@ -129,7 +129,6 @@ def employee_assign():
                                 "name": res["name"],
                             },
                             "state": "CHECKED IN",
-                            "progress": 0,
                         }
                     },
                 },
@@ -142,6 +141,89 @@ def employee_assign():
             return {"status": 200, "data": tasks}, 200
         else:
             return {"status": 404, "message": "User not found."}, 404
+
+
+@employee.route("/logout", methods=["POST"])
+def employee_logout():
+    if request.method == "POST":
+        employee_id = request.json.get("id", "")
+        password = request.json.get("password", "")
+        assignment_statuses = request.json.get("assignment_statuses", [])
+
+        # Check if user exists
+        user = db.employees.find_one({"_id": employee_id, "password": password})
+
+        if not user:
+            return {"status": 404, "message": "User not found."}, 404
+
+        # Check if user is logged in
+        if not user["is_logged_in"]:
+            return {"status": 409, "message": "User not logged in."}, 409
+
+        # Find all assigment ids which are assigned to the user noted by user["assigned_tasks"]
+        assignments = db.assignments.find({"_id": {"$in": user["assigned_tasks"]}})
+
+        # Check if there is any assignment_status where id is not in assignments
+        for assignment_status in assignment_statuses:
+            if assignment_status["id"] not in assignments:
+                return {"status": 409, "message": "Assignment not found."}, 409
+
+        # Update assignments which are assigned to the user
+        for assignment_status in assignment_statuses:
+            # Get assignment where _id is assignment_status["id"]
+            assignment = next(
+                (
+                    assignment
+                    for assignment in assignments
+                    if assignment["_id"] == assignment_status["id"]
+                ),
+                None,
+            )
+
+            # Update assignment status
+            db.assignments.update_one(
+                {"_id": assignment_status["id"]},
+                {
+                    "$set": {
+                        "status": "DONE"
+                        if assignment_status["is_completed"]
+                        else "TO DO",
+                        "progress": assignment["progress"],
+                    },
+                    "$push": {
+                        "logs": {
+                            "id": str(uuid.uuid4()),
+                            "timestamp": str(datetime.datetime.now()),
+                            "assigned_to": {
+                                "id": employee_id,
+                                "name": user["name"],
+                            },
+                            "state": "CHECKED OUT",
+                            "progress": assignment["progress"],
+                        }
+                    },
+                },
+            )
+
+        # Update user's is_logged_in field and assigned_tasks
+        db.employees.update_one(
+            {"_id": employee_id},
+            {
+                "$set": {
+                    "is_logged_in": False,
+                    "assigned_tasks": [],
+                    "logs": [
+                        {
+                            "id": str(uuid.uuid4()),
+                            "action": "LOGOUT",
+                            "timestamp": str(datetime.datetime.now()),
+                        }
+                    ],
+                }
+            },
+        )
+
+        return {"status": 200, "message": "User logged out successfully."}, 200
 
 
 @employee.route("/<id>", methods=["GET", "DELETE"])

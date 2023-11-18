@@ -42,6 +42,7 @@ def assignment_view():
                     "creator": creator,
                     "description": description,
                     "status": "TO DO",
+                    "progress": 0,
                     "logs": [],
                 }
             )
