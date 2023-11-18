@@ -7,8 +7,8 @@ import uuid
 employee = Blueprint("employee", __name__)
 
 
-@employee.route("/", methods=["POST", "GET", "DELETE"])
-def assignment_view():
+@employee.route("/", methods=["POST", "GET"])
+def employee_view():
     if request.method == "POST":
         id = request.json.get("id", "")
         password = request.json.get("password", "")
@@ -42,9 +42,26 @@ def assignment_view():
         for employee in data:
             employee["id"] = str(employee["_id"])
             del employee["_id"]
-            del employee["password"]
 
         return {
             "status": 200,
             "data": data,
         }, 200
+
+
+@employee.route("/<id>", methods=["GET", "DELETE"])
+def employee_by_id(id):
+    if request.method == "GET":
+        res = db.employees.find_one({"_id": id})
+        if res:
+            res["id"] = str(res["_id"])
+            del res["_id"]
+            return {"status": 200, "data": res}, 200
+        else:
+            return {"status": 404, "message": "User not found."}, 404
+    elif request.method == "DELETE":
+        res = db.employees.delete_one({"_id": id})
+        if res.deleted_count == 1:
+            return {"status": 200, "message": "User deleted successfully."}, 200
+        else:
+            return {"status": 404, "message": "User not found."}, 404
