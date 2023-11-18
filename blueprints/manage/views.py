@@ -42,6 +42,8 @@ def level():
         # Delete level if it exists else return 404
         res = db.levels.delete_one({"_id": ObjectId(id)})
         if res.deleted_count == 1:
+            # Delete all assignments which are assigned to this location
+            db.assignments.delete_many({"location_id": {"$eq": id}})
             return {"status": 200}, 200
         else:
             return {"status": 404}, 404
@@ -55,6 +57,10 @@ def level():
             {"$set": {"name": name, "img_url": img_url}},
         )
         if res.modified_count == 1:
+            db.assignments.update_many(
+                {"level_id": {"$eq": id}},
+                {"$set": {"level_name": name}},
+            )
             return {"status": 200}, 200
         else:
             return {"status": 404}, 404
@@ -92,6 +98,9 @@ def locations(level_id):
             {"$pull": {"locations": {"id": {"$eq": location["id"]}}}},
         )
         if res.modified_count == 1:
+            # Delete all assignments which are assigned to this location
+            db.assignments.delete_many({"location_id": {"$eq": location["id"]}})
+
             return {"status": 200}, 200
         else:
             return {"status": 404}, 404
@@ -114,6 +123,10 @@ def locations(level_id):
             {"$set": {"locations.$": location}},
         )
         if res.matched_count == 1:
+            db.assignments.update_many(
+                {"location_id": {"$eq": location["id"]}},
+                {"$set": {"location_name": location["name"]}},
+            )
             return {"status": 200}, 200
         else:
             return {"status": 404}, 404
