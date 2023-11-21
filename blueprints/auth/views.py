@@ -36,7 +36,7 @@ def login():
             },
             current_app.config["SECRET_KEY"],
         )
-        return {"status": 200, "token": token}, 200
+        return {"status": 200, "token": token, "username": res.get("username")}, 200
 
     else:
         return {"status": 404}, 404
