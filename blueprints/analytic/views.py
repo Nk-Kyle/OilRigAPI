@@ -18,27 +18,26 @@ def analytic_view():
 
     assignments = list(db.assignments.find({}))
 
-    work_type_data = defaultdict(lambda: {"sum_progress": 0, "total": 0})
+    division_data = defaultdict(lambda: {"sum_progress": 0, "total": 0})
     for assignment in assignments:
-        work_type_data[assignment["work_type"]]["sum_progress"] += assignment[
-            "progress"
-        ]
-        work_type_data[assignment["work_type"]]["total"] += 1
+        division_data[assignment["division"]]["sum_progress"] += assignment["progress"]
+        division_data[assignment["division"]]["total"] += 1
 
-    for work_type in work_type_data:
-        work_type_data[work_type]["average_progress"] = (
-            work_type_data[work_type]["sum_progress"]
-            / work_type_data[work_type]["total"]
+    for division in division_data:
+        division_data[division]["average_progress"] = (
+            division_data[division]["sum_progress"] / division_data[division]["total"]
         )
-        work_type_data[work_type]["average_progress"] = round(
-            work_type_data[work_type]["average_progress"], 2
+        division_data[division]["average_progress"] = round(
+            division_data[division]["average_progress"], 2
         )
+
+    print(division_data)
 
     return {
         "status": 200,
         "data": {
             "count_logged_in": len(employees_logged_in),
             "employees": employees_logged_in,
-            "work_type_data": work_type_data,
+            "division_data": division_data,
         },
     }
