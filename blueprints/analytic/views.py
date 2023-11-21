@@ -10,7 +10,11 @@ analytic = Blueprint("analytic", __name__)
 
 @analytic.route("/", methods=["GET"])
 def analytic_view():
-    employees_logged_in = list(db.employees.find({"is_logged_in": True}))
+    # Get all employees
+    all_employees = list(db.employees.find({}))
+    employees_logged_in = [
+        employee for employee in all_employees if employee["is_logged_in"]
+    ]
     for user in employees_logged_in:
         user["id"] = str(user["_id"])
         del user["_id"]
@@ -18,10 +22,18 @@ def analytic_view():
 
     assignments = list(db.assignments.find({}))
 
-    division_data = defaultdict(lambda: {"sum_progress": 0, "total": 0})
+    division_data = defaultdict(
+        lambda: {"sum_progress": 0, "total": 0, "logged_in": 0, "logged_out": 0}
+    )
     for assignment in assignments:
         division_data[assignment["division"]]["sum_progress"] += assignment["progress"]
         division_data[assignment["division"]]["total"] += 1
+
+    for employee in all_employees:
+        if employee["is_logged_in"]:
+            division_data[employee["division"]]["logged_in"] += 1
+        else:
+            division_data[employee["division"]]["logged_out"] += 1
 
     for division in division_data:
         division_data[division]["average_progress"] = (
@@ -30,8 +42,6 @@ def analytic_view():
         division_data[division]["average_progress"] = round(
             division_data[division]["average_progress"], 2
         )
-
-    print(division_data)
 
     return {
         "status": 200,
