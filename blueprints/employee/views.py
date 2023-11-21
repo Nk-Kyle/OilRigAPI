@@ -85,15 +85,22 @@ def employee_login():
                 return {"status": 409, "message": "User already logged in."}, 409
 
             # Get assignments TO DO for the user
-            tasks = db.assignments.find(
-                {
-                    "status": "TO DO",
-                    "division": res["division"],
-                    "work_type": res["work_type"],
-                }
-            ).limit(3)
+            tasks = (
+                db.assignments.find(
+                    {
+                        "status": "TO DO",
+                        "division": res["division"],
+                        "work_type": res["work_type"],
+                    }
+                )
+                .sort("priority", 1)
+                .limit(3)
+            )
 
             tasks = list(tasks)
+            for task in tasks:
+                task["id"] = str(task["_id"])
+                del task["_id"]
 
             # Update user's is_logged_in field and set assigned_tasks
             db.employees.update_one(
@@ -101,7 +108,8 @@ def employee_login():
                 {
                     "$set": {
                         "is_logged_in": True,
-                        "assigned_tasks": [task["_id"] for task in tasks],
+                        "assigned_tasks": [task["id"] for task in tasks],
+                        "task_details": tasks,
                         "logs": [
                             {
                                 "id": str(uuid.uuid4()),
@@ -115,7 +123,7 @@ def employee_login():
 
             # Update assignments which are assigned to the user to IN PROGRESS
             db.assignments.update_many(
-                {"_id": {"$in": [task["_id"] for task in tasks]}},
+                {"_id": {"$in": [task["id"] for task in tasks]}},
                 {
                     "$set": {
                         "status": "IN PROGRESS",
@@ -212,6 +220,7 @@ def employee_logout():
                 "$set": {
                     "is_logged_in": False,
                     "assigned_tasks": [],
+                    "task_details": [],
                     "logs": [
                         {
                             "id": str(uuid.uuid4()),
