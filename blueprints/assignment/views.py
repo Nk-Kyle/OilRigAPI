@@ -37,7 +37,7 @@ def assignment_view():
                     "description": description,
                     "status": "TO DO",
                     "progress": 0,
-                    "priority": priority,
+                    "priority": int(priority),
                     "logs": [],
                 }
             )
