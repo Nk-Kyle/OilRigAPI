@@ -101,7 +101,18 @@ def employee_login():
 
             tasks = list(tasks)
             for task in tasks:
+                level = db.levels.find_one({"_id": ObjectId(task["level_id"])})
+                location = next(
+                    (
+                        location
+                        for location in level["locations"]
+                        if location["id"] == task["location_id"]
+                    ),
+                    None,
+                )
+
                 task["id"] = str(task["_id"])
+                task["location"] = location
                 del task["_id"]
 
             # Update user's is_logged_in field and set assigned_tasks
