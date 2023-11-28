@@ -168,6 +168,12 @@ def employee_logout():
         if not user["is_logged_in"]:
             return {"status": 409, "message": "User not logged in."}, 409
 
+        if len(assignment_statuses) != len(user["assigned_tasks"]):
+            return {
+                "status": 409,
+                "message": "Number of assignment statuses and assigned tasks do not match.",
+            }, 409
+
         # Find all assigment ids which are assigned to the user noted by user["assigned_tasks"]
         assignments = db.assignments.find({"_id": {"$in": user["assigned_tasks"]}})
 
@@ -178,16 +184,6 @@ def employee_logout():
 
         # Update assignments which are assigned to the user
         for assignment_status in assignment_statuses:
-            # Get assignment where _id is assignment_status["id"]
-            assignment = next(
-                (
-                    assignment
-                    for assignment in assignments
-                    if assignment["_id"] == assignment_status["id"]
-                ),
-                None,
-            )
-
             # Update assignment status
             db.assignments.update_one(
                 {"_id": assignment_status["id"]},
@@ -196,7 +192,7 @@ def employee_logout():
                         "status": "DONE"
                         if assignment_status["is_completed"]
                         else "TO DO",
-                        "progress": assignment["progress"],
+                        "progress": assignment_status["progress"],
                     },
                     "$push": {
                         "logs": {
@@ -207,7 +203,8 @@ def employee_logout():
                                 "name": user["name"],
                             },
                             "state": "CHECKED OUT",
-                            "progress": assignment["progress"],
+                            "progress": assignment_status["progress"],
+                            "remarks": assignment_status["remarks"],
                         }
                     },
                 },
