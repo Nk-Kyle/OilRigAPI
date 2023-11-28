@@ -67,6 +67,8 @@ def employee_info():
                 "work_type": res["work_type"],
                 "photo_url": res["photo_url"],
                 "is_logged_in": res["is_logged_in"],
+                "assigned_tasks": res["assigned_tasks"],
+                "task_details": res.get("task_details", []),
             }
             return {"status": 200, "data": res}, 200
         else:
