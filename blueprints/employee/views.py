@@ -102,6 +102,7 @@ def employee_login():
             tasks = list(tasks)
             for task in tasks:
                 task["id"] = str(task["_id"])
+                del task["_id"]
 
             # Update user's is_logged_in field and set assigned_tasks
             db.employees.update_one(
@@ -142,9 +143,6 @@ def employee_login():
                     },
                 },
             )
-
-            for task in tasks:
-                del task["_id"]
 
             return {"status": 200, "data": tasks}, 200
         else:
