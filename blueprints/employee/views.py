@@ -185,10 +185,11 @@ def employee_logout():
 
         # Find all assigment ids which are assigned to the user noted by user["assigned_tasks"]
         assignments = db.assignments.find({"_id": {"$in": user["assigned_tasks"]}})
+        assignment_ids = [str(assignment["_id"]) for assignment in assignments]
 
         # Check if there is any assignment_status where id is not in assignments
         for assignment_status in assignment_statuses:
-            if assignment_status["id"] not in assignments:
+            if assignment_status["id"] not in assignment_ids:
                 return {"status": 409, "message": "Assignment not found."}, 409
 
         # Update assignments which are assigned to the user
