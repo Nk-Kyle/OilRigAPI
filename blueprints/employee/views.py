@@ -110,6 +110,10 @@ def employee_login():
                     ),
                     None,
                 )
+                if location is None:
+                    return {"status": 404, "message": "Location not found."}, 404
+
+                task["img_url"] = level["img_url"]
 
                 task["id"] = str(task["_id"])
                 task["location"] = location
