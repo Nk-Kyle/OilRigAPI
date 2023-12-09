@@ -206,7 +206,7 @@ def employee_logout():
                         "status": "DONE"
                         if assignment_status["is_completed"]
                         else "TO DO",
-                        "progress": assignment_status["progress"],
+                        "progress": int(assignment_status["progress"]),
                     },
                     "$push": {
                         "logs": {
@@ -217,7 +217,7 @@ def employee_logout():
                                 "name": user["name"],
                             },
                             "state": "CHECKED OUT",
-                            "progress": assignment_status["progress"],
+                            "progress": int(assignment_status["progress"]),
                             "remarks": assignment_status["remarks"],
                         }
                     },
@@ -240,6 +240,64 @@ def employee_logout():
                         }
                     ],
                 }
+            },
+        )
+
+        return {"status": 200, "message": "User logged out successfully."}, 200
+
+
+@employee.route("/logout/force", methods=["POST"])
+def force_logout():
+    if request.method == "POST":
+        employee_id = request.json.get("id", "")
+
+        # Check if user exists
+        user = db.employees.find_one({"_id": employee_id})
+
+        if not user:
+            return {"status": 404, "message": "User not found."}, 404
+
+        # Check if user is logged in
+        if not user["is_logged_in"]:
+            return {"status": 409, "message": "User not logged in."}, 409
+
+        # Update user's is_logged_in field and assigned_tasks
+        db.employees.update_one(
+            {"_id": employee_id},
+            {
+                "$set": {
+                    "is_logged_in": False,
+                    "assigned_tasks": [],
+                    "task_details": [],
+                    "logs": [
+                        {
+                            "id": str(uuid.uuid4()),
+                            "action": "LOGOUT",
+                            "timestamp": str(datetime.datetime.now()),
+                        }
+                    ],
+                }
+            },
+        )
+
+        # Update assignments which are assigned to the user to IN PROGRESS
+        db.assignments.update_many(
+            {"_id": {"$in": user["assigned_tasks"]}},
+            {
+                "$set": {
+                    "status": "TO DO",
+                },
+                "$push": {
+                    "logs": {
+                        "id": str(uuid.uuid4()),
+                        "timestamp": str(datetime.datetime.now()),
+                        "assigned_to": {
+                            "id": employee_id,
+                            "name": user["name"],
+                        },
+                        "state": "FORCED CHECKED OUT",
+                    }
+                },
             },
         )
 

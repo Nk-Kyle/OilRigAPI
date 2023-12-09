@@ -26,7 +26,9 @@ def analytic_view():
         lambda: {"sum_progress": 0, "total": 0, "logged_in": 0, "logged_out": 0}
     )
     for assignment in assignments:
-        division_data[assignment["division"]]["sum_progress"] += assignment["progress"]
+        division_data[assignment["division"]]["sum_progress"] += int(
+            assignment["progress"]
+        )
         division_data[assignment["division"]]["total"] += 1
 
     for employee in all_employees:
